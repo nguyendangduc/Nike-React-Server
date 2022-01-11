@@ -547,7 +547,8 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   }
 
   user.token = md5(new Date().getTime().toString());
-
+  console.log( user.token )
+  console.log(md5(new Date().getTime().toString()))
   return res.json({ ...user });
 });
 
