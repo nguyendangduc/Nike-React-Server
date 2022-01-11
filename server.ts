@@ -12,8 +12,13 @@ interface User {
 }
 
 interface Order {
+  id:number;
+  idUser:number;
+  urlImg:string;
   productName: string;
-  itemCost: number;
+  size: number;
+  quantity: number;
+  price: number;
 }
 
 interface State {
@@ -43,6 +48,7 @@ const customers: Customer[] = JSON.parse(
 const products: any[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const states: State[] = JSON.parse(readFileSync("data/states.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
+const orders:Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -494,13 +500,15 @@ app.get(
 // ============================= ORDERS ===========================
 
 app.get("/api/orders/:id", function (req: Request, res: Response) {
-  let customerId = parseInt(req.params.id, 10);
-  for (let cust of customers) {
-    if (cust.id === customerId) {
-      return res.json(cust);
+  let userId = parseInt(req.params.id, 10);
+  let ords: Order[] = [];
+  for (let ord of orders) {
+    if (ord.idUser === userId) {
+      ords.push(ord);
     }
   }
-  res.json([]);
+  
+  res.json(ords);
 });
 
 // ============================= STATES ===========================
