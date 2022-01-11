@@ -1,20 +1,28 @@
 import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
-import { readFileSync } from "fs";
+import { readFileSync,writeFileSync } from "fs";
 import md5 from "md5";
+import { generateId } from "./functions/genId";
 
+interface Address {
+  city: string
+  address: string
+
+}
 interface User {
   id: number;
   email: string;
   password: string;
-  numberPerPage: number;
   token: string;
+  phoneNumber: number;
+  address: Address;
+  avatar: string
 }
 
 interface Order {
-  id:number;
-  idUser:number;
-  urlImg:string;
+  id: number;
+  idUser: number;
+  urlImg: string;
   productName: string;
   size: number;
   quantity: number;
@@ -48,7 +56,7 @@ const customers: Customer[] = JSON.parse(
 const products: any[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const states: State[] = JSON.parse(readFileSync("data/states.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
-const orders:Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
+const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -507,7 +515,7 @@ app.get("/api/orders/:id", function (req: Request, res: Response) {
       ords.push(ord);
     }
   }
-  
+
   res.json(ords);
 });
 
@@ -555,9 +563,35 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   }
 
   user.token = md5(new Date().getTime().toString());
-  console.log( user.token )
-  console.log(md5(new Date().getTime().toString()))
   return res.json({ ...user });
+});
+
+app.post("/api/auth/register", (req: Request, res: Response) => {
+  var { email, password } = req.body;
+
+  console.log(email, password);
+
+  const user = users.find((user) => user.email === email);
+  console.log(1111)
+  if (user) {
+  console.log(1111)
+
+    return res.status(400).json({ message: "This email already exists!" });
+  } else if (!user) {
+    users.push({
+      id: generateId(),
+      email: email,
+      password: password,
+      token: md5(new Date().getTime().toString()),
+      phoneNumber:0,
+      avatar:'',
+      address: {address: '', city: ''}
+    });
+    const userRes = users.find(
+      (user) => user.email === email && user.password === password
+    );
+    return res.json({ ...userRes });
+  }
 });
 
 app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {

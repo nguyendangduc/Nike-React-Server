@@ -3,6 +3,9 @@
     "id": 1,
     "email": "test@test.com",
     "password": "test123",
-    "numberPerPage": 10
+    "address": {"address": "", "city": ""},
+    "avatar":"",
+    "phoneNumber":0
   }
+  
 ]
