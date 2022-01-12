@@ -7,6 +7,17 @@
     "avatar":"",
     "phoneNumber":0,
     "rules":[
+      "user"
+    ]
+  },
+  {
+    "id": 2,
+    "email": "test2@test.com",
+    "password": "test123",
+    "address": {"address": "", "city": ""},
+    "avatar":"",
+    "phoneNumber":0,
+    "rules":[
       "admin",
       "user"
     ]
