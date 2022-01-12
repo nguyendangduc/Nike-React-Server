@@ -605,6 +605,98 @@ app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {
   res.json(true);
 });
 
+// ============================= USERS ===========================
+
+app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
+  const topVal = parseInt(req.params.top, 10);
+  const skipVal = parseInt(req.params.skip, 10);
+
+  const skip = isNaN(skipVal) ? 0 : skipVal;
+  let top = isNaN(topVal) ? 10 : skip + topVal;
+
+  if (top > users.length) {
+    top = skip + (users.length - skip);
+  }
+
+  console.log(`Skip: ${skip} Top: ${top}`);
+
+  var pagedUsers = users.slice(skip, top);
+  res.json({
+    results: pagedUsers,
+    totalRecords: users.length,
+  });
+});
+
+app.get("/api/users", (req: Request, res: Response) => {
+  res.json(users);
+});
+
+app.get("/api/users/:id", (req: Request, res: Response) => {
+  let userId = parseInt(req.params.id, 10);
+  let selectedUser = null;
+  for (let user of users) {
+    if (user.id === userId) {
+      // found user to create one to send
+      selectedUser = {};
+      selectedUser = user;
+      break;
+    }
+  }
+  res.json(selectedUser);
+});
+
+app.post("/api/users",checkToken, (req: Request, res: Response) => {
+  let postedUser = req.body;
+  let maxId = Math.max.apply(
+    Math,
+    users.map((user) => user.id)
+  );
+  postedUser.id = ++maxId;
+  users.push(postedUser);
+  res.json(postedUser);
+});
+
+app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
+  let putUser: User = req.body;
+  let id = parseInt(req.params.id, 10);
+  let status = false;
+
+  const user = users.find((user) => user.id == id);
+
+  if (!user) {
+    return res.status(400).json({
+      message: "Cannot find user with id:" + id,
+    });
+  }
+
+  user.password = putUser.password;
+  user.address = putUser.address;
+  user.avatar = putUser.avatar;
+  user.phoneNumber = putUser.phoneNumber;
+  user.rules = putUser.rules;
+
+  res.json({ ...user });
+});
+
+app.delete(
+  "/api/users/:id",
+  checkToken,
+  function (req: Request, res: Response) {
+    let userId = parseInt(req.params.id, 10);
+    const findIndex = users.findIndex((user) => user.id === userId);
+
+    if (findIndex === -1) {
+      return res.status(400).json({
+        message: "Cannot find user with id:" + userId,
+      });
+    }
+
+    const user = { ...users[findIndex] };
+    users.splice(findIndex, 1);
+
+    res.json({ ...user });
+  }
+);
 // ============================= RUN ===========================
 
 app.listen(port);
