@@ -5,7 +5,11 @@
     "password": "test123",
     "address": {"address": "", "city": ""},
     "avatar":"",
-    "phoneNumber":0
+    "phoneNumber":0,
+    "rules":[
+      "admin",
+      "user"
+    ]
   }
   
 ]

@@ -1,13 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
-import { readFileSync,writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
 import { generateId } from "./functions/genId";
 
 interface Address {
-  city: string
-  address: string
-
+  city: string;
+  address: string;
 }
 interface User {
   id: number;
@@ -16,7 +15,8 @@ interface User {
   token: string;
   phoneNumber: number;
   address: Address;
-  avatar: string
+  avatar: string;
+  rules: string[];
 }
 
 interface Order {
@@ -78,22 +78,18 @@ app.use(function (req: Request, res: Response, next: NextFunction) {
 
 function checkToken(request: Request, response: Response, next: NextFunction) {
   const authorization = request.headers.authorization;
-
   const token = authorization?.split("Bearer ")[1];
 
   if (!token) {
+    console.log('token is required');
     return response.status(401).json({
       message: "token is required",
     });
   }
 
   const user = users.filter((user) => user.token == token.trim());
-
-  console.log(user);
-
   if (!user) {
-    console.log(user);
-
+    console.log('token is invalid')
     return response.status(401).json({
       message: "token is invalid",
     });
@@ -552,8 +548,6 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
 app.post("/api/auth/login", (req: Request, res: Response) => {
   var { email, password } = req.body;
 
-  console.log(email, password);
-
   const user = users.find(
     (user) => user.email === email && user.password === password
   );
@@ -566,16 +560,28 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   return res.json({ ...user });
 });
 
+app.post(
+  "/api/auth/authWithToken",
+  checkToken,
+  (req: Request, res: Response) => {
+    const authorization = req.headers.authorization;
+    const token = authorization?.split("Bearer ")[1];
+    const user = users.find((user) => {
+      return user.token==token?.trim()
+    })
+    if (!user) {
+      return res.status(401).json({ message: "Token is invalid" });
+    }
+
+    return res.json({ ...user });
+  }
+);
+
 app.post("/api/auth/register", (req: Request, res: Response) => {
   var { email, password } = req.body;
 
-  console.log(email, password);
-
   const user = users.find((user) => user.email === email);
-  console.log(1111)
   if (user) {
-  console.log(1111)
-
     return res.status(400).json({ message: "This email already exists!" });
   } else if (!user) {
     users.push({
@@ -583,9 +589,10 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
       email: email,
       password: password,
       token: md5(new Date().getTime().toString()),
-      phoneNumber:0,
-      avatar:'',
-      address: {address: '', city: ''}
+      phoneNumber: 0,
+      avatar: "",
+      address: { address: "", city: "" },
+      rules:["user"]
     });
     const userRes = users.find(
       (user) => user.email === email && user.password === password
