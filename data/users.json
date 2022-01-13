@@ -4,8 +4,8 @@
     "email": "test@test.com",
     "password": "test123",
     "address": {"address": "", "city": ""},
-    "avatar":"",
-    "phoneNumber":0,
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
     "rules":[
       "user"
     ]
@@ -16,7 +16,7 @@
     "password": "test123",
     "address": {"address": "", "city": ""},
     "avatar":"",
-    "phoneNumber":0,
+    "phoneNumber":"0935344344",
     "rules":[
       "admin",
       "user"
