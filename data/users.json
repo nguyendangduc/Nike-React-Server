@@ -3,7 +3,7 @@
     "id": 1,
     "email": "test@test.com",
     "password": "test123",
-    "address": {"address": "", "city": ""},
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
     "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
     "phoneNumber":"0935344344",
     "rules":[

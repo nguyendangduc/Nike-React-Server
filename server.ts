@@ -81,15 +81,15 @@ function checkToken(request: Request, response: Response, next: NextFunction) {
   const token = authorization?.split("Bearer ")[1];
 
   if (!token) {
-    console.log('token is required');
+    console.log("token is required");
     return response.status(401).json({
       message: "token is required",
     });
   }
 
-  const user = users.filter((user) => user.token == token.trim());
+  const user = users.filter((user) => user.token == token.trim())[0];
   if (!user) {
-    console.log('token is invalid')
+    console.log("token is invalid");
     return response.status(401).json({
       message: "token is invalid",
     });
@@ -567,8 +567,8 @@ app.post(
     const authorization = req.headers.authorization;
     const token = authorization?.split("Bearer ")[1];
     const user = users.find((user) => {
-      return user.token==token?.trim()
-    })
+      return user.token == token?.trim();
+    });
     if (!user) {
       return res.status(401).json({ message: "Token is invalid" });
     }
@@ -592,7 +592,7 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
       phoneNumber: "",
       avatar: "",
       address: { address: "", city: "" },
-      rules:["user"]
+      rules: ["user"],
     });
     const userRes = users.find(
       (user) => user.email === email && user.password === password
@@ -639,7 +639,7 @@ app.get(
 
     let records = users.filter(
       (user) =>
-      user.email.toLowerCase().includes(searchW.toLowerCase()) === true
+        user.email.toLowerCase().includes(searchW.toLowerCase()) === true
     );
 
     if (top > records.length) {
@@ -674,13 +674,13 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
   res.json(selectedUser);
 });
 
-app.post("/api/users",checkToken, (req: Request, res: Response) => {
+app.post("/api/users", checkToken, (req: Request, res: Response) => {
   let postedUser = req.body;
-  const findUserByEmail = users.find((user) => user.email === postedUser.email)
-  if(findUserByEmail) {
+  const findUserByEmail = users.find((user) => user.email === postedUser.email);
+  if (findUserByEmail) {
     return res.status(400).json({
-            message: "This email already exits!",
-          });
+      message: "This email already exits!",
+    });
   }
   let maxId = Math.max.apply(
     Math,
@@ -690,7 +690,6 @@ app.post("/api/users",checkToken, (req: Request, res: Response) => {
   users.push(postedUser);
   res.json(postedUser);
 
-  
   // {
   // "email": "teeest2@test.com",
   // "password": "test123",
@@ -702,7 +701,6 @@ app.post("/api/users",checkToken, (req: Request, res: Response) => {
   //   "user"
   // ]
   // }
-
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
@@ -717,20 +715,28 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
       message: "Cannot find user with id:" + id,
     });
   }
-  user.password = putUser.password;
-  user.address = putUser.address;
-  user.avatar = putUser.avatar;
-  user.phoneNumber = putUser.phoneNumber;
 
-  res.json({ ...user });
+  if (putUser.password === user.password) {
+    const userFindByEmail = users.find((user) => user.email === putUser.email);
+    if (userFindByEmail && userFindByEmail.id !== putUser.id) {
+      return res.status(400).json({ message: "New Email is already exists!" });
+    }
+    user.email = putUser.email;
+    user.password = putUser.password;
+    user.address = putUser.address;
+    user.avatar = putUser.avatar;
+    user.phoneNumber = putUser.phoneNumber;
 
-//   {
-//     "phoneNumber":"04343",
-//  "password": "1",
-//  "address": {"address": "1", "city": "Ha noi"},
-//  "avatar":"f"
-// }
+    res.json({ ...user });
+  }
+  return res.status(400).json({ message: "Confirm password is incorrect!" });
 
+  //   {
+  //     "phoneNumber":"04343",
+  //  "password": "1",
+  //  "address": {"address": "1", "city": "Ha noi"},
+  //  "avatar":"f"
+  // }
 });
 
 app.delete(
