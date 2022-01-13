@@ -718,7 +718,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
   if (putUser.password === user.password) {
     const userFindByEmail = users.find((user) => user.email === putUser.email);
-    if (userFindByEmail && userFindByEmail.id!==putUser.id) {
+    if (userFindByEmail && userFindByEmail.id !== putUser.id) {
       return res.status(400).json({ message: "New Email is already exists!" });
     }
     user.email = putUser.email;
@@ -726,7 +726,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
     user.address = putUser.address;
     user.avatar = putUser.avatar;
     user.phoneNumber = putUser.phoneNumber;
-  
+
     res.json({ ...user });
   }
   return res.status(400).json({ message: "Confirm password is incorrect!" });
