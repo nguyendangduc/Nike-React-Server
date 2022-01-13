@@ -712,6 +712,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
   if (!user) {
     return res.status(400).json({
+      nameInput:'id',
       message: "Cannot find user with id:" + id,
     });
   }
@@ -719,7 +720,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
   if (putUser.password === user.password) {
     const userFindByEmail = users.find((user) => user.email === putUser.email);
     if (userFindByEmail && userFindByEmail.id !== putUser.id) {
-      return res.status(400).json({ message: "New Email is already exists!" });
+      return res.status(400).json({ nameInput:"email",message: "New Email is already exists!" });
     }
     user.email = putUser.email;
     user.password = putUser.password;
@@ -729,7 +730,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
     res.json({ ...user });
   }
-  return res.status(400).json({ message: "Confirm password is incorrect!" });
+  return res.status(400).json({ nameInput:"password", message: "Confirm password is incorrect!" });
 
   //   {
   //     "phoneNumber":"04343",
