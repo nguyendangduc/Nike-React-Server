@@ -57,6 +57,7 @@ const products: any[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const states: State[] = JSON.parse(readFileSync("data/states.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
+const carts : Order[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -515,6 +516,10 @@ app.get("/api/orders/:id", function (req: Request, res: Response) {
   res.json(ords);
 });
 
+// ============================= CARTs ===========================
+
+
+
 // ============================= STATES ===========================
 
 app.get("/api/states", (req: Request, res: Response) => {
@@ -656,25 +661,23 @@ app.post("/api/users",checkToken, (req: Request, res: Response) => {
   res.json(postedUser);
 });
 
-app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
+app.put("/api/users", checkToken, (req: Request, res: Response) => {
   let putUser: User = req.body;
-  let id = parseInt(req.params.id, 10);
+  // let id = parseInt(req.params.id, 10);
   let status = false;
 
-  const user = users.find((user) => user.id == id);
+  const user = users.find((user) => user.id == putUser.id);
 
   if (!user) {
     return res.status(400).json({
-      message: "Cannot find user with id:" + id,
+      message: "Cannot find user with id:" + putUser.id,
     });
   }
 
-  user.password = putUser.password;
+  // user.password = putUser.password;
   user.address = putUser.address;
   user.avatar = putUser.avatar;
   user.phoneNumber = putUser.phoneNumber;
-  user.rules = putUser.rules;
-
   res.json({ ...user });
 });
 
