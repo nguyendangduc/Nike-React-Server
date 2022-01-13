@@ -13,7 +13,7 @@ interface User {
   email: string;
   password: string;
   token: string;
-  phoneNumber: number;
+  phoneNumber: string;
   address: Address;
   avatar: string;
   rules: string[];
@@ -526,27 +526,27 @@ app.get("/api/states", (req: Request, res: Response) => {
   res.json(states);
 });
 
-app.post("/api/users", checkToken, (req: Request, res: Response) => {
-  var { currentEmail, newEmail, password, numberPerPage } = req.body;
+// app.post("/api/users", checkToken, (req: Request, res: Response) => {
+//   var { currentEmail, newEmail, password, numberPerPage } = req.body;
 
-  console.log(currentEmail, newEmail, password, numberPerPage);
+//   console.log(currentEmail, newEmail, password, numberPerPage);
 
-  const user = users.find(
-    (user) => user.email === currentEmail && user.password === password
-  );
+//   const user = users.find(
+//     (user) => user.email === currentEmail && user.password === password
+//   );
 
-  if (!user) {
-    return res.status(400).json({
-      message: "Email or password is invalid",
-    });
-  }
+//   if (!user) {
+//     return res.status(400).json({
+//       message: "Email or password is invalid",
+//     });
+//   }
 
-  user.email = newEmail;
+//   user.email = newEmail;
 
-  res.json({
-    ...user,
-  });
-});
+//   res.json({
+//     ...user,
+//   });
+// });
 
 // ============================= AUTH ===========================
 
@@ -594,7 +594,7 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
       email: email,
       password: password,
       token: md5(new Date().getTime().toString()),
-      phoneNumber: 0,
+      phoneNumber: "",
       avatar: "",
       address: { address: "", city: "" },
       rules:["user"]
@@ -632,6 +632,35 @@ app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
   });
 });
 
+app.get(
+  "/api/users/search/:search/page/:skip/:top",
+  (req: Request, res: Response) => {
+    const searchW = req.params.search;
+    const topVal = parseInt(req.params.top, 10);
+    const skipVal = parseInt(req.params.skip, 10);
+
+    const skip = isNaN(skipVal) ? 0 : skipVal;
+    let top = isNaN(topVal) ? 10 : skip + topVal;
+
+    let records = users.filter(
+      (user) =>
+      user.email.toLowerCase().includes(searchW.toLowerCase()) === true
+    );
+
+    if (top > records.length) {
+      top = skip + (records.length - skip);
+    }
+
+    console.log(`Skip: ${skip} Top: ${top}  search: ${searchW}`);
+
+    var pagedUsers = records.slice(skip, top);
+    res.json({
+      results: pagedUsers,
+      totalRecords: records.length,
+    });
+  }
+);
+
 app.get("/api/users", (req: Request, res: Response) => {
   res.json(users);
 });
@@ -652,6 +681,12 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
 
 app.post("/api/users",checkToken, (req: Request, res: Response) => {
   let postedUser = req.body;
+  const findUserByEmail = users.find((user) => user.email === postedUser.email)
+  if(findUserByEmail) {
+    return res.status(400).json({
+            message: "This email already exits!",
+          });
+  }
   let maxId = Math.max.apply(
     Math,
     users.map((user) => user.id)
@@ -659,26 +694,48 @@ app.post("/api/users",checkToken, (req: Request, res: Response) => {
   postedUser.id = ++maxId;
   users.push(postedUser);
   res.json(postedUser);
+
+  
+  // {
+  // "email": "teeest2@test.com",
+  // "password": "test123",
+  // "address": {"address": "", "city": ""},
+  // "avatar":"",
+  // "phoneNumber":"3434",
+  // "rules":[
+  //   "admin",
+  //   "user"
+  // ]
+  // }
+
 });
 
-app.put("/api/users", checkToken, (req: Request, res: Response) => {
+app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
   let putUser: User = req.body;
-  // let id = parseInt(req.params.id, 10);
+  let id = parseInt(req.params.id, 10);
   let status = false;
 
-  const user = users.find((user) => user.id == putUser.id);
+  const user = users.find((user) => user.id == id);
 
   if (!user) {
     return res.status(400).json({
-      message: "Cannot find user with id:" + putUser.id,
+      message: "Cannot find user with id:" + id,
     });
   }
-
-  // user.password = putUser.password;
+  user.password = putUser.password;
   user.address = putUser.address;
   user.avatar = putUser.avatar;
   user.phoneNumber = putUser.phoneNumber;
+
   res.json({ ...user });
+
+//   {
+//     "phoneNumber":"04343",
+//  "password": "1",
+//  "address": {"address": "1", "city": "Ha noi"},
+//  "avatar":"f"
+// }
+
 });
 
 app.delete(
