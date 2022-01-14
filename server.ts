@@ -518,6 +518,51 @@ app.get("/api/orders/:id", function (req: Request, res: Response) {
 
 // ============================= CARTs ===========================
 
+app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = parseInt(req.params.id, 10);
+  let c: Order[] = [];
+  for (let ca of carts){
+    if(ca.idUser === userId){
+      c.push(ca);
+    }
+  }
+  res.json(c);
+});
+
+app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = parseInt(req.params.id, 10);
+  let ca = req.body;
+  let c: Order[] = [];
+  let maxId = Math.max.apply(
+    Math,
+    carts.map((cart) => cart.id)
+  );
+  for (let car of carts){
+    if(car.idUser === userId){
+      c.push(car);
+    }
+  }
+  ca.id = ++maxId;
+  ca.idUser = userId;
+  res.json([...c, ca]);
+})
+
+app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=>{
+  let userId = parseInt(req.params.id, 10);
+  let orderId = parseInt(req.params.idOrder, 10);
+  const findIndex = carts.findIndex((order) => (order.id === orderId && order.idUser === userId));
+
+    if (findIndex === -1) {
+      return res.status(400).json({
+        message: "Cannot find order with id:" + userId,
+      });
+    }
+
+    const cart = { ...carts[findIndex] };
+    carts.splice(findIndex, 1);
+
+    res.json({ ...cart });
+})
 
 
 // ============================= STATES ===========================
