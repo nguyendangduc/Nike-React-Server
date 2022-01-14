@@ -377,14 +377,14 @@ app.post("/api/products", checkToken, (req: Request, res: Response) => {
     return res.status(403).json({ message: "Access denied" });
   }
 
-  let postedProduct:Product = req.body
+  let postedProduct:ProductPostBody = req.body
   let maxId = Math.max.apply(
     Math,
     products.map((product) => product.id)
   );
-  postedProduct.id = ++maxId;
-  products.push(postedProduct);
-  res.json(postedProduct);
+  const newProduct:Product = {id:++maxId,...postedProduct};
+  products.push(newProduct);
+  res.json(newProduct);
 
 });
 
@@ -394,10 +394,10 @@ app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
     return res.status(403).json({ message: "Access denied" });
   }
 
-  let putProduct = req.body;
+  let putProduct:ProductPutBody = req.body;
   let id = parseInt(req.params.id, 10);
 
-  const product = products.find((product) => product.id == id);
+  const product:Product|undefined = products.find((product) => product.id == id);
 
   if (!product) {
     return res.status(400).json({
