@@ -690,17 +690,6 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
   users.push(postedUser);
   res.json(postedUser);
 
-  // {
-  // "email": "teeest2@test.com",
-  // "password": "test123",
-  // "address": {"address": "", "city": ""},
-  // "avatar":"",
-  // "phoneNumber":"3434",
-  // "rules":[
-  //   "admin",
-  //   "user"
-  // ]
-  // }
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
@@ -732,12 +721,6 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
   }
   return res.status(400).json({ nameInput:"password", message: "Confirm password is incorrect!" });
 
-  //   {
-  //     "phoneNumber":"04343",
-  //  "password": "1",
-  //  "address": {"address": "1", "city": "Ha noi"},
-  //  "avatar":"f"
-  // }
 });
 
 app.delete(
