@@ -3,58 +3,10 @@ import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
 import { generateId } from "./functions/genId";
-
-interface Address {
-  city: string;
-  address: string;
-}
-interface User {
-  id: number;
-  email: string;
-  password: string;
-  token: string;
-  phoneNumber: string;
-  address: Address;
-  avatar: string;
-  rules: string[];
-}
-
-interface Order {
-  id: number;
-  idUser: number;
-  urlImg: string;
-  productName: string;
-  size: number;
-  quantity: number;
-  price: number;
-}
-
-interface State {
-  _id: string;
-  id: number;
-  abbreviation: string;
-  name: string;
-}
-
-interface Customer {
-  id: number;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  address: string;
-  city: string;
-  state: State;
-  orders: Order[];
-  latitude: number;
-  longitude: number;
-}
+import {Product, User, Order, ProductPutBody, ProductPostBody, UserPostBody, UserPutBody} from './models'
 
 const app = express();
-const customers: Customer[] = JSON.parse(
-  readFileSync("data/customers.json", "utf-8")
-);
-const products: any[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
-const states: State[] = JSON.parse(readFileSync("data/states.json", "utf-8"));
+const products: Product[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
 const port = process.env.PORT || 3005;
@@ -97,99 +49,6 @@ function checkToken(request: Request, response: Response, next: NextFunction) {
 
   next();
 }
-
-// ============================= CUSTOMERS ===========================
-
-app.get("/api/customers/page/:skip/:top", (req: Request, res: Response) => {
-  const topVal = parseInt(req.params.top, 10);
-  const skipVal = parseInt(req.params.skip, 10);
-
-  const skip = isNaN(skipVal) ? 0 : skipVal;
-  let top = isNaN(topVal) ? 10 : skip + topVal;
-
-  if (top > customers.length) {
-    top = skip + (customers.length - skip);
-  }
-
-  console.log(`Skip: ${skip} Top: ${top}`);
-
-  var pagedCustomers = customers.slice(skip, top);
-  res.json({
-    results: pagedCustomers,
-    totalRecords: customers.length,
-  });
-});
-
-app.get("/api/customers", (req: Request, res: Response) => {
-  res.json(customers);
-});
-
-app.get("/api/customers/:id", (req: Request, res: Response) => {
-  let customerId = parseInt(req.params.id, 10);
-  let selectedCustomer = null;
-  for (let customer of customers) {
-    if (customer.id === customerId) {
-      // found customer to create one to send
-      selectedCustomer = {};
-      selectedCustomer = customer;
-      break;
-    }
-  }
-  res.json(selectedCustomer);
-});
-
-app.post("/api/customers", (req: Request, res: Response) => {
-  let postedCustomer = req.body;
-  let maxId = Math.max.apply(
-    Math,
-    customers.map((customer) => customer.id)
-  );
-  postedCustomer.id = ++maxId;
-  postedCustomer.gender = postedCustomer.id % 2 === 0 ? "female" : "male";
-  customers.push(postedCustomer);
-  res.json(postedCustomer);
-});
-
-app.put("/api/customers/:id", checkToken, (req: Request, res: Response) => {
-  let putCustomer: Customer = req.body;
-  let id = parseInt(req.params.id, 10);
-  let status = false;
-
-  const customer = customers.find((user) => user.id == id);
-
-  if (!customer) {
-    return res.status(400).json({
-      message: "Cannot find user with id:" + id,
-    });
-  }
-
-  customer.firstName = putCustomer.firstName;
-  customer.lastName = putCustomer.lastName;
-  customer.address = putCustomer.address;
-  customer.city = putCustomer.city;
-
-  res.json({ ...customer });
-});
-
-app.delete(
-  "/api/customers/:id",
-  checkToken,
-  function (req: Request, res: Response) {
-    let customerId = parseInt(req.params.id, 10);
-    const findIndex = customers.findIndex((user) => user.id === customerId);
-
-    if (findIndex === -1) {
-      return res.status(400).json({
-        message: "Cannot find user with id:" + customerId,
-      });
-    }
-
-    const customer = { ...customers[findIndex] };
-    customers.splice(findIndex, 1);
-
-    res.json({ ...customer });
-  }
-);
 
 // ============================= PRODUCTS ===========================
 
@@ -501,6 +360,90 @@ app.get(
   }
 );
 
+function checkPermissionCrudProduct(req:Request) {
+
+  const authorization = req.headers.authorization;
+  const token = authorization?.split("Bearer ")[1];
+  const user = users.find((user) => {
+    return user.token == token?.trim();
+  });
+  return user?.rules.includes('admin') ? true : false;
+}
+
+
+app.post("/api/products", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermissionCrudProduct(req)) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let postedProduct:Product = req.body
+  let maxId = Math.max.apply(
+    Math,
+    products.map((product) => product.id)
+  );
+  postedProduct.id = ++maxId;
+  products.push(postedProduct);
+  res.json(postedProduct);
+
+});
+
+app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermissionCrudProduct(req)) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let putProduct = req.body;
+  let id = parseInt(req.params.id, 10);
+
+  const product = products.find((product) => product.id == id);
+
+  if (!product) {
+    return res.status(400).json({
+      nameInput:'id',
+      message: "Cannot find product with id:" + id,
+    });
+  }
+
+    product.name = putProduct.name;
+    product.price = putProduct.price;
+    product.size = putProduct.size;
+    product.thumbnail = putProduct.thumbnail;
+    product.type = putProduct.type;
+    product.color = putProduct.color;
+    product.colorimg = putProduct.colorimg;
+    product.detailimg = putProduct.detailimg;
+
+    res.json({ ...product });
+  }
+)
+
+app.delete(
+  "/api/products/:id",
+  checkToken,
+  function (req: Request, res: Response) {
+
+    if (!checkPermissionCrudProduct(req)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let productId = parseInt(req.params.id, 10);
+    const findIndex = products.findIndex((product) => product.id === productId);
+
+    if (findIndex === -1) {
+      return res.status(400).json({
+        message: "Cannot find product with id:" + productId,
+      });
+    }
+
+    const product = { ...products[findIndex] };
+    products.splice(findIndex, 1);
+
+    res.json({ ...product });
+  }
+);
+
 // ============================= ORDERS ===========================
 
 app.get("/api/orders/:id", function (req: Request, res: Response) {
@@ -514,34 +457,6 @@ app.get("/api/orders/:id", function (req: Request, res: Response) {
 
   res.json(ords);
 });
-
-// ============================= STATES ===========================
-
-app.get("/api/states", (req: Request, res: Response) => {
-  res.json(states);
-});
-
-// app.post("/api/users", checkToken, (req: Request, res: Response) => {
-//   var { currentEmail, newEmail, password, numberPerPage } = req.body;
-
-//   console.log(currentEmail, newEmail, password, numberPerPage);
-
-//   const user = users.find(
-//     (user) => user.email === currentEmail && user.password === password
-//   );
-
-//   if (!user) {
-//     return res.status(400).json({
-//       message: "Email or password is invalid",
-//     });
-//   }
-
-//   user.email = newEmail;
-
-//   res.json({
-//     ...user,
-//   });
-// });
 
 // ============================= AUTH ===========================
 
