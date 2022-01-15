@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
-import { generateId } from "./functions/genId";
+import { generateId, genId } from "./functions/genId";
 
 interface Address {
   city: string;
@@ -20,11 +20,11 @@ interface User {
 }
 
 interface Order {
-  id: number;
-  idUser: number;
+  id: string;
+  idUser: string;
   urlImg: string;
   productName: string;
-  size: number;
+  size: string;
   quantity: number;
   price: number;
 }
@@ -504,22 +504,21 @@ app.get(
 
 // ============================= ORDERS ===========================
 
-app.get("/api/orders/:id", function (req: Request, res: Response) {
-  let userId = parseInt(req.params.id, 10);
+app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+  let userId = req.params.id;
   let ords: Order[] = [];
   for (let ord of orders) {
     if (ord.idUser === userId) {
       ords.push(ord);
     }
   }
-
   res.json(ords);
 });
 
 // ============================= CARTs ===========================
 
 app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
-  let userId = parseInt(req.params.id, 10);
+  let userId = req.params.id;
   let c: Order[] = [];
   for (let ca of carts){
     if(ca.idUser === userId){
@@ -530,26 +529,27 @@ app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
 });
 
 app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
-  let userId = parseInt(req.params.id, 10);
+  let userId = req.params.id;
   let ca = req.body;
   let c: Order[] = [];
-  let maxId = Math.max.apply(
-    Math,
-    carts.map((cart) => cart.id)
-  );
+  // let maxId = Math.max.apply(
+  //   Math,
+  //   carts.map((cart) => cart.id)
+  // );
   for (let car of carts){
     if(car.idUser === userId){
       c.push(car);
     }
   }
-  ca.id = ++maxId;
+  ca.id = genId();
   ca.idUser = userId;
-  res.json([...c, ca]);
+  carts.push(ca);
+  res.json({...ca});
 })
 
 app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=>{
-  let userId = parseInt(req.params.id, 10);
-  let orderId = parseInt(req.params.idOrder, 10);
+  let userId = req.params.id;
+  let orderId = req.params.idOrder;
   const findIndex = carts.findIndex((order) => (order.id === orderId && order.idUser === userId));
 
     if (findIndex === -1) {
@@ -561,7 +561,7 @@ app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=
     const cart = { ...carts[findIndex] };
     carts.splice(findIndex, 1);
 
-    res.json({ ...cart });
+    res.json({...cart });
 })
 
 
