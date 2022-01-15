@@ -360,20 +360,20 @@ app.get(
   }
 );
 
-function checkPermissionCrudProduct(req:Request) {
+function checkPermission(req:Request, rule:string) {
 
   const authorization = req.headers.authorization;
   const token = authorization?.split("Bearer ")[1];
   const user = users.find((user) => {
     return user.token == token?.trim();
   });
-  return user?.rules.includes('admin') ? true : false;
+  return user?.rules.includes(rule) ? true : false;
 }
 
 
 app.post("/api/products", checkToken, (req: Request, res: Response) => {
 
-  if (!checkPermissionCrudProduct(req)) {
+  if (!checkPermission(req, 'admin')) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -382,7 +382,7 @@ app.post("/api/products", checkToken, (req: Request, res: Response) => {
     Math,
     products.map((product) => product.id)
   );
-  const newProduct:Product = {id:++maxId,...postedProduct};
+  const newProduct:Product = {...postedProduct,id:++maxId};
   products.push(newProduct);
   res.json(newProduct);
 
@@ -390,7 +390,7 @@ app.post("/api/products", checkToken, (req: Request, res: Response) => {
 
 app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
 
-  if (!checkPermissionCrudProduct(req)) {
+  if (!checkPermission(req, 'admin')) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -424,7 +424,7 @@ app.delete(
   checkToken,
   function (req: Request, res: Response) {
 
-    if (!checkPermissionCrudProduct(req)) {
+    if (!checkPermission(req, 'admin')) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -522,7 +522,12 @@ app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {
 
 // ============================= USERS ===========================
 
-app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
+app.get("/api/users/page/:skip/:top", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   const topVal = parseInt(req.params.top, 10);
   const skipVal = parseInt(req.params.skip, 10);
 
@@ -543,8 +548,13 @@ app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
 });
 
 app.get(
-  "/api/users/search/:search/page/:skip/:top",
+  "/api/users/search/:search/page/:skip/:top", checkToken,
   (req: Request, res: Response) => {
+
+    if (!checkPermission(req, 'admin')) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const searchW = req.params.search;
     const topVal = parseInt(req.params.top, 10);
     const skipVal = parseInt(req.params.skip, 10);
@@ -571,11 +581,21 @@ app.get(
   }
 );
 
-app.get("/api/users", (req: Request, res: Response) => {
+app.get("/api/users",checkToken, (req: Request, res: Response) => {
+  
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   res.json(users);
 });
 
-app.get("/api/users/:id", (req: Request, res: Response) => {
+app.get("/api/users/:id", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   let userId = parseInt(req.params.id, 10);
   let selectedUser = null;
   for (let user of users) {
@@ -590,7 +610,12 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
 });
 
 app.post("/api/users", checkToken, (req: Request, res: Response) => {
-  let postedUser = req.body;
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let postedUser:User = req.body;
   const findUserByEmail = users.find((user) => user.email === postedUser.email);
   if (findUserByEmail) {
     return res.status(400).json({
@@ -602,12 +627,18 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
     users.map((user) => user.id)
   );
   postedUser.id = ++maxId;
+  postedUser.rules = ['user']
   users.push(postedUser);
   res.json(postedUser);
 
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
+
+  // if (!checkPermission(req, 'admin')) {
+  //   return res.status(403).json({ message: "Access denied" });
+  // }
+
   let putUser: User = req.body;
   let id = parseInt(req.params.id, 10);
   let status = false;
@@ -623,7 +654,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
   if (putUser.password === user.password) {
     const userFindByEmail = users.find((user) => user.email === putUser.email);
-    if (userFindByEmail && userFindByEmail.id !== putUser.id) {
+    if (userFindByEmail && userFindByEmail.id !== id) {
       return res.status(400).json({ nameInput:"email",message: "New Email is already exists!" });
     }
     user.email = putUser.email;
@@ -642,6 +673,11 @@ app.delete(
   "/api/users/:id",
   checkToken,
   function (req: Request, res: Response) {
+
+    if (!checkPermission(req, 'admin')) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
     let userId = parseInt(req.params.id, 10);
     const findIndex = users.findIndex((user) => user.id === userId);
 

@@ -21,6 +21,106 @@
       "admin",
       "user"
     ]
+  },  {
+    "id": 3,
+    "email": "test3@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 4,
+    "email": "test4@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 5,
+    "email": "test5@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 6,
+    "email": "test6@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 7,
+    "email": "test7@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 8,
+    "email": "test8@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 9,
+    "email": "test9@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 10,
+    "email": "test10@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 11,
+    "email": "test11@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
+  },  {
+    "id": 12,
+    "email": "test12@test.com",
+    "password": "test123",
+    "address": {"address": "197 Tran Phu, Ha Dong", "city": "Ha Noi"},
+    "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
+    "phoneNumber":"0935344344",
+    "rules":[
+      "user"
+    ]
   }
   
 ]
