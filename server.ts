@@ -3,58 +3,10 @@ import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
 import { generateId, genId } from "./functions/genId";
-
-interface Address {
-  city: string;
-  address: string;
-}
-interface User {
-  id: number;
-  email: string;
-  password: string;
-  token: string;
-  phoneNumber: string;
-  address: Address;
-  avatar: string;
-  rules: string[];
-}
-
-interface Order {
-  id: string;
-  idUser: string;
-  urlImg: string;
-  productName: string;
-  size: string;
-  quantity: number;
-  price: number;
-}
-
-interface State {
-  _id: string;
-  id: number;
-  abbreviation: string;
-  name: string;
-}
-
-interface Customer {
-  id: number;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  address: string;
-  city: string;
-  state: State;
-  orders: Order[];
-  latitude: number;
-  longitude: number;
-}
+import {Product, User, Order, ProductPutBody, ProductPostBody, UserPostBody, UserPutBody} from './models'
 
 const app = express();
-const customers: Customer[] = JSON.parse(
-  readFileSync("data/customers.json", "utf-8")
-);
-const products: any[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
-const states: State[] = JSON.parse(readFileSync("data/states.json", "utf-8"));
+const products: Product[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
 const carts : Order[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
@@ -98,99 +50,6 @@ function checkToken(request: Request, response: Response, next: NextFunction) {
 
   next();
 }
-
-// ============================= CUSTOMERS ===========================
-
-app.get("/api/customers/page/:skip/:top", (req: Request, res: Response) => {
-  const topVal = parseInt(req.params.top, 10);
-  const skipVal = parseInt(req.params.skip, 10);
-
-  const skip = isNaN(skipVal) ? 0 : skipVal;
-  let top = isNaN(topVal) ? 10 : skip + topVal;
-
-  if (top > customers.length) {
-    top = skip + (customers.length - skip);
-  }
-
-  console.log(`Skip: ${skip} Top: ${top}`);
-
-  var pagedCustomers = customers.slice(skip, top);
-  res.json({
-    results: pagedCustomers,
-    totalRecords: customers.length,
-  });
-});
-
-app.get("/api/customers", (req: Request, res: Response) => {
-  res.json(customers);
-});
-
-app.get("/api/customers/:id", (req: Request, res: Response) => {
-  let customerId = parseInt(req.params.id, 10);
-  let selectedCustomer = null;
-  for (let customer of customers) {
-    if (customer.id === customerId) {
-      // found customer to create one to send
-      selectedCustomer = {};
-      selectedCustomer = customer;
-      break;
-    }
-  }
-  res.json(selectedCustomer);
-});
-
-app.post("/api/customers", (req: Request, res: Response) => {
-  let postedCustomer = req.body;
-  let maxId = Math.max.apply(
-    Math,
-    customers.map((customer) => customer.id)
-  );
-  postedCustomer.id = ++maxId;
-  postedCustomer.gender = postedCustomer.id % 2 === 0 ? "female" : "male";
-  customers.push(postedCustomer);
-  res.json(postedCustomer);
-});
-
-app.put("/api/customers/:id", checkToken, (req: Request, res: Response) => {
-  let putCustomer: Customer = req.body;
-  let id = parseInt(req.params.id, 10);
-  let status = false;
-
-  const customer = customers.find((user) => user.id == id);
-
-  if (!customer) {
-    return res.status(400).json({
-      message: "Cannot find user with id:" + id,
-    });
-  }
-
-  customer.firstName = putCustomer.firstName;
-  customer.lastName = putCustomer.lastName;
-  customer.address = putCustomer.address;
-  customer.city = putCustomer.city;
-
-  res.json({ ...customer });
-});
-
-app.delete(
-  "/api/customers/:id",
-  checkToken,
-  function (req: Request, res: Response) {
-    let customerId = parseInt(req.params.id, 10);
-    const findIndex = customers.findIndex((user) => user.id === customerId);
-
-    if (findIndex === -1) {
-      return res.status(400).json({
-        message: "Cannot find user with id:" + customerId,
-      });
-    }
-
-    const customer = { ...customers[findIndex] };
-    customers.splice(findIndex, 1);
-
-    res.json({ ...customer });
-  }
-);
 
 // ============================= PRODUCTS ===========================
 
@@ -502,6 +361,90 @@ app.get(
   }
 );
 
+function checkPermission(req:Request, rule:string) {
+
+  const authorization = req.headers.authorization;
+  const token = authorization?.split("Bearer ")[1];
+  const user = users.find((user) => {
+    return user.token == token?.trim();
+  });
+  return user?.rules.includes(rule) ? true : false;
+}
+
+
+app.post("/api/products", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let postedProduct:ProductPostBody = req.body
+  let maxId = Math.max.apply(
+    Math,
+    products.map((product) => product.id)
+  );
+  const newProduct:Product = {...postedProduct,id:++maxId};
+  products.push(newProduct);
+  res.json(newProduct);
+
+});
+
+app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let putProduct:ProductPutBody = req.body;
+  let id = parseInt(req.params.id, 10);
+
+  const product:Product|undefined = products.find((product) => product.id == id);
+
+  if (!product) {
+    return res.status(400).json({
+      nameInput:'id',
+      message: "Cannot find product with id:" + id,
+    });
+  }
+
+    product.name = putProduct.name;
+    product.price = putProduct.price;
+    product.size = putProduct.size;
+    product.thumbnail = putProduct.thumbnail;
+    product.type = putProduct.type;
+    product.color = putProduct.color;
+    product.colorimg = putProduct.colorimg;
+    product.detailimg = putProduct.detailimg;
+
+    res.json({ ...product });
+  }
+)
+
+app.delete(
+  "/api/products/:id",
+  checkToken,
+  function (req: Request, res: Response) {
+
+    if (!checkPermission(req, 'admin')) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let productId = parseInt(req.params.id, 10);
+    const findIndex = products.findIndex((product) => product.id === productId);
+
+    if (findIndex === -1) {
+      return res.status(400).json({
+        message: "Cannot find product with id:" + productId,
+      });
+    }
+
+    const product = { ...products[findIndex] };
+    products.splice(findIndex, 1);
+
+    res.json({ ...product });
+  }
+);
+
 // ============================= ORDERS ===========================
 
 app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
@@ -564,34 +507,6 @@ app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=
     res.json({...cart });
 })
 
-
-// ============================= STATES ===========================
-
-app.get("/api/states", (req: Request, res: Response) => {
-  res.json(states);
-});
-
-// app.post("/api/users", checkToken, (req: Request, res: Response) => {
-//   var { currentEmail, newEmail, password, numberPerPage } = req.body;
-
-//   console.log(currentEmail, newEmail, password, numberPerPage);
-
-//   const user = users.find(
-//     (user) => user.email === currentEmail && user.password === password
-//   );
-
-//   if (!user) {
-//     return res.status(400).json({
-//       message: "Email or password is invalid",
-//     });
-//   }
-
-//   user.email = newEmail;
-
-//   res.json({
-//     ...user,
-//   });
-// });
 
 // ============================= AUTH ===========================
 
@@ -657,7 +572,12 @@ app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {
 
 // ============================= USERS ===========================
 
-app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
+app.get("/api/users/page/:skip/:top", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   const topVal = parseInt(req.params.top, 10);
   const skipVal = parseInt(req.params.skip, 10);
 
@@ -678,8 +598,13 @@ app.get("/api/users/page/:skip/:top", (req: Request, res: Response) => {
 });
 
 app.get(
-  "/api/users/search/:search/page/:skip/:top",
+  "/api/users/search/:search/page/:skip/:top", checkToken,
   (req: Request, res: Response) => {
+
+    if (!checkPermission(req, 'admin')) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const searchW = req.params.search;
     const topVal = parseInt(req.params.top, 10);
     const skipVal = parseInt(req.params.skip, 10);
@@ -706,11 +631,21 @@ app.get(
   }
 );
 
-app.get("/api/users", (req: Request, res: Response) => {
+app.get("/api/users",checkToken, (req: Request, res: Response) => {
+  
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   res.json(users);
 });
 
-app.get("/api/users/:id", (req: Request, res: Response) => {
+app.get("/api/users/:id", checkToken, (req: Request, res: Response) => {
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   let userId = parseInt(req.params.id, 10);
   let selectedUser = null;
   for (let user of users) {
@@ -725,7 +660,12 @@ app.get("/api/users/:id", (req: Request, res: Response) => {
 });
 
 app.post("/api/users", checkToken, (req: Request, res: Response) => {
-  let postedUser = req.body;
+
+  if (!checkPermission(req, 'admin')) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  let postedUser:User = req.body;
   const findUserByEmail = users.find((user) => user.email === postedUser.email);
   if (findUserByEmail) {
     return res.status(400).json({
@@ -737,12 +677,18 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
     users.map((user) => user.id)
   );
   postedUser.id = ++maxId;
+  postedUser.rules = ['user']
   users.push(postedUser);
   res.json(postedUser);
 
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
+
+  // if (!checkPermission(req, 'admin')) {
+  //   return res.status(403).json({ message: "Access denied" });
+  // }
+
   let putUser: User = req.body;
   let id = parseInt(req.params.id, 10);
   let status = false;
@@ -758,7 +704,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
   if (putUser.password === user.password) {
     const userFindByEmail = users.find((user) => user.email === putUser.email);
-    if (userFindByEmail && userFindByEmail.id !== putUser.id) {
+    if (userFindByEmail && userFindByEmail.id !== id) {
       return res.status(400).json({ nameInput:"email",message: "New Email is already exists!" });
     }
     user.email = putUser.email;
@@ -777,6 +723,11 @@ app.delete(
   "/api/users/:id",
   checkToken,
   function (req: Request, res: Response) {
+
+    if (!checkPermission(req, 'admin')) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
     let userId = parseInt(req.params.id, 10);
     const findIndex = users.findIndex((user) => user.id === userId);
 
