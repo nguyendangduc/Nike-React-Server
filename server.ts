@@ -3,13 +3,13 @@ import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
 import { generateId, genId } from "./functions/genId";
-import {Product, User, Order, ProductPutBody, ProductPostBody, UserPostBody, UserPutBody} from './models'
+import {Product, User, CartItem, ProductPutBody, ProductPostBody, UserPostBody, UserPutBody, Order} from './models'
 
 const app = express();
 const products: Product[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
-const carts : Order[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
+const carts : CartItem[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -449,7 +449,7 @@ app.delete(
 
 app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
   let userId = req.params.id;
-  let ords: Order[] = [];
+  let ords: CartItem[] = [];
   for (let ord of orders) {
     if (ord.idUser === userId) {
       ords.push(ord);
@@ -462,7 +462,7 @@ app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
 
 app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
   let userId = req.params.id;
-  let c: Order[] = [];
+  let c: CartItem[] = [];
   for (let ca of carts){
     if(ca.idUser === userId){
       c.push(ca);
@@ -474,11 +474,7 @@ app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
 app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
   let userId = req.params.id;
   let ca = req.body;
-  let c: Order[] = [];
-  // let maxId = Math.max.apply(
-  //   Math,
-  //   carts.map((cart) => cart.id)
-  // );
+  let c: CartItem[] = [];
   for (let car of carts){
     if(car.idUser === userId){
       c.push(car);
@@ -486,6 +482,7 @@ app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
   }
   ca.id = genId();
   ca.idUser = userId;
+  ca.quantity = 1;
   carts.push(ca);
   res.json({...ca});
 })
@@ -501,10 +498,39 @@ app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=
       });
     }
 
-    const cart = { ...carts[findIndex] };
     carts.splice(findIndex, 1);
+    const cart = carts.filter((c)=>c.idUser === userId);
 
-    res.json({...cart });
+    res.json([...cart ]);
+})
+
+app.post("/api/carts/checkout/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = req.params.id;
+  let info = req.body;
+  let newCarts = carts.filter(cart=>cart.idUser === userId);
+  let length =  carts.length;
+  for(let i = 0; i < length; i++){
+    if(carts[i].idUser === userId){
+      carts.splice(i,1);
+      i--;
+      length--;
+    }
+  }
+  newCarts.map(cart=>{
+    let ord: Order= {} as Order;
+    ord.id = genId();
+    ord.idUser = cart.idUser;
+    ord.productName = cart.productName;
+    ord.price = cart.price;
+    ord.size = cart.size;
+    ord.quantity = cart.quantity;
+    ord.urlImg = cart.urlImg;
+    ord.address = info.address+", "+info.city;
+    ord.name = info.name;
+    ord.phoneNumber = info.phoneNumber;
+    orders.unshift(ord);
+  })
+  res.json(orders);
 })
 
 

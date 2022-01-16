@@ -33,14 +33,27 @@ export interface Address {
     rules: string[];
   }
   
+  export interface CartItem {
+    id: string;
+    idUser: string;
+    urlImg: string;
+    productName: string;
+    size: string;
+    quantity: number;
+    price: number;
+  }
+
   export interface Order {
     id: string;
     idUser: string;
     urlImg: string;
     productName: string;
-    size: number;
+    size: string;
     quantity: number;
     price: number;
+    name:string;
+    address:string;
+    phoneNumber:string;
   }
 
    export interface Product {

@@ -5,7 +5,7 @@
         "urlImg":"https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/adc7cecb-c02a-42c1-b2de-67ddc141295d/air-force-1-gore-tex-shoes-xkl3Ps.png",
         "productName":"Nike",
         "size":43,
-        "quantity":2,
+        "quantity":1,
         "price":60
     },
     {
@@ -13,8 +13,17 @@
         "idUser":"1",
         "urlImg":"https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/adc7cecb-c02a-42c1-b2de-67ddc141295d/air-force-1-gore-tex-shoes-xkl3Ps.png",
         "productName":"Air",
-        "size":43,
-        "quantity":2,
+        "size":"43",
+        "quantity":1,
+        "price":60
+    },
+    {
+        "id":"2",
+        "idUser":"2",
+        "urlImg":"https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/adc7cecb-c02a-42c1-b2de-67ddc141295d/air-force-1-gore-tex-shoes-xkl3Ps.png",
+        "productName":"Air",
+        "size":"43",
+        "quantity":1,
         "price":60
     }
 ]
