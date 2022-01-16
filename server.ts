@@ -461,7 +461,6 @@ app.delete(
 
 // ============================= ORDERS ===========================
 
-<<<<<<< HEAD
 app.get("/api/orders/:id/search/:search",checkToken, function (req: Request, res: Response) {
   let userId = req.params.id;
   let searchKey = req.params.search;
@@ -481,9 +480,6 @@ app.get("/api/orders/:id/search/:search",checkToken, function (req: Request, res
 });
 
 app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
-=======
-app.get("/api/orders/:id", checkToken, function (req: Request, res: Response) {
->>>>>>> 23d7119c57c632eead1bc45dd4bffd9b6d1ce1dd
   let userId = req.params.id;
   const ords: CartItem[] = [];
   for (let ord of orders) {
