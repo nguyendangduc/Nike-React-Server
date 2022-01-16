@@ -10,7 +10,6 @@ import {
   ProductPutBody,
   ProductPostBody,
   UserRole,
-  UserPutBody,
   AccountSetting,
   CartItem,
 } from "./models";
@@ -74,7 +73,6 @@ app.get("/api/products/:id", (req: Request, res: Response) => {
   let selectedProduct = null;
   for (let product of products) {
     if (product.id === productId) {
-      // found product to create one to send
       selectedProduct = {};
       selectedProduct = product;
       break;
@@ -85,8 +83,6 @@ app.get("/api/products/:id", (req: Request, res: Response) => {
 
 // get products by PAGE
 app.get("/api/products/page/:skip/:top", (req: Request, res: Response) => {
-  // skip: vị trí bắt đầu
-  // top: số phần tử 1 page
   const topVal = parseInt(req.params.top, 10);
   const skipVal = parseInt(req.params.skip, 10);
 
@@ -110,8 +106,6 @@ app.get("/api/products/page/:skip/:top", (req: Request, res: Response) => {
 app.get(
   "/api/products/type/:type/page/:skip/:top",
   (req: Request, res: Response) => {
-    // skip: vị trí bắt đầu
-    // top: số phần tử 1 page
     const productType = req.params.type;
     const topVal = parseInt(req.params.top, 10);
     const skipVal = parseInt(req.params.skip, 10);
@@ -180,10 +174,8 @@ app.get(
 
     if (sortBy === "price") {
       if (sortVal === "asc") {
-        // tang dan
         records.sort((a, b) => Number(a.price) - Number(b.price));
       } else if (sortVal === "desc") {
-        // giam dan
         records.sort((a, b) => Number(b.price) - Number(a.price));
       }
     }
@@ -221,10 +213,8 @@ app.get(
     records = [...records];
     if (sortBy === "price") {
       if (sortVal === "asc") {
-        // tang dan
         records.sort((a, b) => Number(a.price) - Number(b.price));
       } else if (sortVal === "desc") {
-        // giam dan
         records.sort((a, b) => Number(b.price) - Number(a.price));
       }
     }
@@ -300,10 +290,8 @@ app.get(
     records = [...records];
     if (sortBy === "price") {
       if (sortVal === "asc") {
-        // tang dan
         records.sort((a, b) => Number(a.price) - Number(b.price));
       } else if (sortVal === "desc") {
-        // giam dan
         records.sort((a, b) => Number(b.price) - Number(a.price));
       }
     }
@@ -347,10 +335,8 @@ app.get(
     records = [...records];
     if (sortBy === "price") {
       if (sortVal === "asc") {
-        // tang dan
         records.sort((a, b) => Number(a.price) - Number(b.price));
       } else if (sortVal === "desc") {
-        // giam dan
         records.sort((a, b) => Number(b.price) - Number(a.price));
       }
     }
@@ -558,7 +544,7 @@ app.post(
 );
 
 // ============================= AUTH ===========================
-const expirationTime = 10*60*1000
+const expirationTime = 10 * 60 * 1000;
 app.post("/api/auth/login", (req: Request, res: Response) => {
   var { email, password } = req.body;
 
@@ -720,7 +706,6 @@ app.get("/api/users/:id", checkToken, (req: Request, res: Response) => {
   let selectedUser = null;
   for (let user of users) {
     if (user.id === userId) {
-      // found user to create one to send
       selectedUser = {};
       selectedUser = user;
       break;
@@ -752,9 +737,6 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
-  // if (!checkPermission(req, 'admin')) {
-  //   return res.status(403).json({ message: "Access denied" });
-  // }
 
   let putUser: User = req.body;
   let id = parseInt(req.params.id, 10);
