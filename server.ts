@@ -21,7 +21,7 @@ const products: Product[] = JSON.parse(
 );
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
-const carts : CartItem[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
+const carts: CartItem[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -46,17 +46,15 @@ function checkToken(request: Request, response: Response, next: NextFunction) {
   const token = authorization?.split("Bearer ")[1];
 
   if (!token) {
-    console.log("token is required");
     return response.status(401).json({
-      message: "token is required",
+      message: "Token is required",
     });
   }
 
   const user = users.filter((user) => user.token == token.trim())[0];
   if (!user) {
-    console.log("token is invalid");
     return response.status(401).json({
-      message: "token is invalid",
+      message: "Login session expired, please login again!",
     });
   }
 
@@ -383,7 +381,10 @@ function checkPermission(req: Request, rule: string) {
 }
 
 app.post("/api/products", checkToken, (req: Request, res: Response) => {
-  if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
+  if (
+    !checkPermission(req, "admin") &&
+    !checkPermission(req, "product_admin")
+  ) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -398,7 +399,10 @@ app.post("/api/products", checkToken, (req: Request, res: Response) => {
 });
 
 app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
-  if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
+  if (
+    !checkPermission(req, "admin") &&
+    !checkPermission(req, "product_admin")
+  ) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -432,7 +436,10 @@ app.delete(
   "/api/products/:id",
   checkToken,
   function (req: Request, res: Response) {
-    if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
+    if (
+      !checkPermission(req, "admin") &&
+      !checkPermission(req, "product_admin")
+    ) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -454,7 +461,7 @@ app.delete(
 
 // ============================= ORDERS ===========================
 
-app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+app.get("/api/orders/:id", checkToken, function (req: Request, res: Response) {
   let userId = req.params.id;
   let ords: CartItem[] = [];
   for (let ord of orders) {
@@ -467,23 +474,23 @@ app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
 
 // ============================= CARTs ===========================
 
-app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+app.get("/api/carts/:id", checkToken, (req: Request, res: Response) => {
   let userId = req.params.id;
   let c: CartItem[] = [];
-  for (let ca of carts){
-    if(ca.idUser === userId){
+  for (let ca of carts) {
+    if (ca.idUser === userId) {
       c.push(ca);
     }
   }
   res.json(c);
 });
 
-app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+app.post("/api/carts/:id", checkToken, (req: Request, res: Response) => {
   let userId = req.params.id;
   let ca = req.body;
   let c: CartItem[] = [];
-  for (let car of carts){
-    if(car.idUser === userId){
+  for (let car of carts) {
+    if (car.idUser === userId) {
       c.push(car);
     }
   }
@@ -491,13 +498,18 @@ app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
   ca.idUser = userId;
   ca.quantity = 1;
   carts.push(ca);
-  res.json({...ca});
-})
+  res.json({ ...ca });
+});
 
-app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=>{
-  let userId = req.params.id;
-  let orderId = req.params.idOrder;
-  const findIndex = carts.findIndex((order) => (order.id === orderId && order.idUser === userId));
+app.delete(
+  "/api/carts/:id/:idOrder",
+  checkToken,
+  (req: Request, res: Response) => {
+    let userId = req.params.id;
+    let orderId = req.params.idOrder;
+    const findIndex = carts.findIndex(
+      (order) => order.id === orderId && order.idUser === userId
+    );
 
     if (findIndex === -1) {
       return res.status(400).json({
@@ -506,43 +518,47 @@ app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=
     }
 
     carts.splice(findIndex, 1);
-    const cart = carts.filter((c)=>c.idUser === userId);
+    const cart = carts.filter((c) => c.idUser === userId);
 
-    res.json([...cart ]);
-})
-
-app.post("/api/carts/checkout/:id", checkToken, (req: Request, res: Response)=>{
-  let userId = req.params.id;
-  let info = req.body;
-  let newCarts = carts.filter(cart=>cart.idUser === userId);
-  let length =  carts.length;
-  for(let i = 0; i < length; i++){
-    if(carts[i].idUser === userId){
-      carts.splice(i,1);
-      i--;
-      length--;
-    }
+    res.json([...cart]);
   }
-  newCarts.map(cart=>{
-    let ord: Order= {} as Order;
-    ord.id = genId();
-    ord.idUser = cart.idUser;
-    ord.productName = cart.productName;
-    ord.price = cart.price;
-    ord.size = cart.size;
-    ord.quantity = cart.quantity;
-    ord.urlImg = cart.urlImg;
-    ord.address = info.address+", "+info.city;
-    ord.name = info.name;
-    ord.phoneNumber = info.phoneNumber;
-    orders.unshift(ord);
-  })
-  res.json(orders);
-})
+);
 
+app.post(
+  "/api/carts/checkout/:id",
+  checkToken,
+  (req: Request, res: Response) => {
+    let userId = req.params.id;
+    let info = req.body;
+    let newCarts = carts.filter((cart) => cart.idUser === userId);
+    let length = carts.length;
+    for (let i = 0; i < length; i++) {
+      if (carts[i].idUser === userId) {
+        carts.splice(i, 1);
+        i--;
+        length--;
+      }
+    }
+    newCarts.map((cart) => {
+      let ord: Order = {} as Order;
+      ord.id = genId();
+      ord.idUser = cart.idUser;
+      ord.productName = cart.productName;
+      ord.price = cart.price;
+      ord.size = cart.size;
+      ord.quantity = cart.quantity;
+      ord.urlImg = cart.urlImg;
+      ord.address = info.address + ", " + info.city;
+      ord.name = info.name;
+      ord.phoneNumber = info.phoneNumber;
+      orders.unshift(ord);
+    });
+    res.json(orders);
+  }
+);
 
 // ============================= AUTH ===========================
-
+const expirationTime = 10*60*1000
 app.post("/api/auth/login", (req: Request, res: Response) => {
   var { email, password } = req.body;
 
@@ -555,6 +571,11 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   }
 
   user.token = md5(new Date().getTime().toString());
+  const expirationDate = new Date(new Date().getTime() + expirationTime);
+  user.expired = expirationDate;
+  setTimeout(function () {
+    user.token = "";
+  }, expirationTime);
   return res.json({ ...user });
 });
 
@@ -568,9 +589,19 @@ app.post(
       return user.token == token?.trim();
     });
     if (!user) {
-      return res.status(401).json({ message: "Token is invalid" });
+      return res
+        .status(401)
+        .json({ message: "Login session expired, please login again!" });
     }
-
+    const expirationDate = user.expired ? new Date(user.expired).getTime() : 0;
+    if (expirationDate <= new Date().getTime()) {
+      return res
+        .status(401)
+        .json({ message: "Login session expired, please login again!" });
+    }
+    setTimeout(function () {
+      user.token = "";
+    }, expirationDate - new Date().getTime());
     return res.json({ ...user });
   }
 );
@@ -595,6 +626,11 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
     const userRes = users.find(
       (user) => user.email === email && user.password === password
     );
+    const expirationDate = new Date(new Date().getTime() + expirationTime);
+    userRes ? (userRes.expired = expirationDate) : "";
+    setTimeout(function () {
+      userRes ? (userRes.token = "") : "";
+    }, expirationTime);
     return res.json({ ...userRes });
   }
 });
@@ -612,7 +648,7 @@ app.get(
     if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
       return res.status(403).json({ message: "Access denied" });
     }
-    
+
     const topVal = parseInt(req.params.top, 10);
     const skipVal = parseInt(req.params.skip, 10);
 
@@ -830,9 +866,9 @@ app.put(
         message: "Cannot find account with id:" + id,
       });
     }
-    console.log(putRole, user?.rules)
+    console.log(putRole, user?.rules);
     if (!user.rules.includes(putRole.role)) {
-      user.rules.push(putRole.role)
+      user.rules.push(putRole.role);
     }
 
     res.json({ ...user });

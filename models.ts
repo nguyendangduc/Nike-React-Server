@@ -11,6 +11,7 @@ export interface Address {
     address: Address;
     avatar: string;
     rules: string[];
+    expired?:Date;
   }
   export interface UserPostBody {
     id: number;
