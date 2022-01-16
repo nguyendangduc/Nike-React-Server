@@ -67,6 +67,11 @@ export interface Address {
     type:      string;
     gender:    string;
   }
+
+  export interface AccountSetting {
+    newEmail: string;
+    newPassword: string;
+  }
   
   export interface ProductPutBody {
     name:      string;
@@ -78,5 +83,9 @@ export interface Address {
     size:      string[];
     type:      string;
     gender:    string;
+  }
+
+  export interface UserRole {
+    role: string;
   }
   

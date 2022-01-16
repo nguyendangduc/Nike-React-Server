@@ -29,7 +29,8 @@
     "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
     "phoneNumber":"0935344344",
     "rules":[
-      "user"
+      "user",
+      "user_admin"
     ]
   },  {
     "id": 4,
@@ -39,7 +40,8 @@
     "avatar":"https://s.memehay.com/files/posts/20210427/anh-da-den-moi-day-mat-chan-nan.jpeg",
     "phoneNumber":"0935344344",
     "rules":[
-      "user"
+      "user",
+      "product_admin"
     ]
   },  {
     "id": 5,

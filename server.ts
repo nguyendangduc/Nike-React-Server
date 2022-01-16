@@ -3,10 +3,21 @@ import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
 import { generateId } from "./functions/genId";
-import {Product, User, Order, ProductPutBody, ProductPostBody, UserPostBody, UserPutBody} from './models'
+import {
+  Product,
+  User,
+  Order,
+  ProductPutBody,
+  ProductPostBody,
+  UserRole,
+  UserPutBody,
+  AccountSetting,
+} from "./models";
 
 const app = express();
-const products: Product[] = JSON.parse(readFileSync("data/products.json", "utf-8"));
+const products: Product[] = JSON.parse(
+  readFileSync("data/products.json", "utf-8")
+);
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
 const port = process.env.PORT || 3005;
@@ -360,8 +371,7 @@ app.get(
   }
 );
 
-function checkPermission(req:Request, rule:string) {
-
+function checkPermission(req: Request, rule: string) {
   const authorization = req.headers.authorization;
   const token = authorization?.split("Bearer ")[1];
   const user = users.find((user) => {
@@ -370,61 +380,57 @@ function checkPermission(req:Request, rule:string) {
   return user?.rules.includes(rule) ? true : false;
 }
 
-
 app.post("/api/products", checkToken, (req: Request, res: Response) => {
-
-  if (!checkPermission(req, 'admin')) {
+  if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
     return res.status(403).json({ message: "Access denied" });
   }
 
-  let postedProduct:ProductPostBody = req.body
+  let postedProduct: ProductPostBody = req.body;
   let maxId = Math.max.apply(
     Math,
     products.map((product) => product.id)
   );
-  const newProduct:Product = {...postedProduct,id:++maxId};
+  const newProduct: Product = { ...postedProduct, id: ++maxId };
   products.push(newProduct);
   res.json(newProduct);
-
 });
 
 app.put("/api/products/:id", checkToken, (req: Request, res: Response) => {
-
-  if (!checkPermission(req, 'admin')) {
+  if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
     return res.status(403).json({ message: "Access denied" });
   }
 
-  let putProduct:ProductPutBody = req.body;
+  let putProduct: ProductPutBody = req.body;
   let id = parseInt(req.params.id, 10);
 
-  const product:Product|undefined = products.find((product) => product.id == id);
+  const product: Product | undefined = products.find(
+    (product) => product.id == id
+  );
 
   if (!product) {
     return res.status(400).json({
-      nameInput:'id',
+      nameInput: "id",
       message: "Cannot find product with id:" + id,
     });
   }
 
-    product.name = putProduct.name;
-    product.price = putProduct.price;
-    product.size = putProduct.size;
-    product.thumbnail = putProduct.thumbnail;
-    product.type = putProduct.type;
-    product.color = putProduct.color;
-    product.colorimg = putProduct.colorimg;
-    product.detailimg = putProduct.detailimg;
+  product.name = putProduct.name;
+  product.price = putProduct.price;
+  product.size = putProduct.size;
+  product.thumbnail = putProduct.thumbnail;
+  product.type = putProduct.type;
+  product.color = putProduct.color;
+  product.colorimg = putProduct.colorimg;
+  product.detailimg = putProduct.detailimg;
 
-    res.json({ ...product });
-  }
-)
+  res.json({ ...product });
+});
 
 app.delete(
   "/api/products/:id",
   checkToken,
   function (req: Request, res: Response) {
-
-    if (!checkPermission(req, 'admin')) {
+    if (!checkPermission(req, "admin")&&!checkPermission(req, "product_admin")) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -522,36 +528,39 @@ app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {
 
 // ============================= USERS ===========================
 
-app.get("/api/users/page/:skip/:top", checkToken, (req: Request, res: Response) => {
+app.get(
+  "/api/users/page/:skip/:top",
+  checkToken,
+  (req: Request, res: Response) => {
+    if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    const topVal = parseInt(req.params.top, 10);
+    const skipVal = parseInt(req.params.skip, 10);
 
-  if (!checkPermission(req, 'admin')) {
-    return res.status(403).json({ message: "Access denied" });
+    const skip = isNaN(skipVal) ? 0 : skipVal;
+    let top = isNaN(topVal) ? 10 : skip + topVal;
+
+    if (top > users.length) {
+      top = skip + (users.length - skip);
+    }
+
+    console.log(`Skip: ${skip} Top: ${top}`);
+
+    var pagedUsers = users.slice(skip, top);
+    res.json({
+      results: pagedUsers,
+      totalRecords: users.length,
+    });
   }
-
-  const topVal = parseInt(req.params.top, 10);
-  const skipVal = parseInt(req.params.skip, 10);
-
-  const skip = isNaN(skipVal) ? 0 : skipVal;
-  let top = isNaN(topVal) ? 10 : skip + topVal;
-
-  if (top > users.length) {
-    top = skip + (users.length - skip);
-  }
-
-  console.log(`Skip: ${skip} Top: ${top}`);
-
-  var pagedUsers = users.slice(skip, top);
-  res.json({
-    results: pagedUsers,
-    totalRecords: users.length,
-  });
-});
+);
 
 app.get(
-  "/api/users/search/:search/page/:skip/:top", checkToken,
+  "/api/users/search/:search/page/:skip/:top",
+  checkToken,
   (req: Request, res: Response) => {
-
-    if (!checkPermission(req, 'admin')) {
+    if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -581,9 +590,8 @@ app.get(
   }
 );
 
-app.get("/api/users",checkToken, (req: Request, res: Response) => {
-  
-  if (!checkPermission(req, 'admin')) {
+app.get("/api/users", checkToken, (req: Request, res: Response) => {
+  if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -591,8 +599,7 @@ app.get("/api/users",checkToken, (req: Request, res: Response) => {
 });
 
 app.get("/api/users/:id", checkToken, (req: Request, res: Response) => {
-
-  if (!checkPermission(req, 'admin')) {
+  if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
     return res.status(403).json({ message: "Access denied" });
   }
 
@@ -610,12 +617,11 @@ app.get("/api/users/:id", checkToken, (req: Request, res: Response) => {
 });
 
 app.post("/api/users", checkToken, (req: Request, res: Response) => {
-
-  if (!checkPermission(req, 'admin')) {
+  if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
     return res.status(403).json({ message: "Access denied" });
   }
 
-  let postedUser:User = req.body;
+  let postedUser: User = req.body;
   const findUserByEmail = users.find((user) => user.email === postedUser.email);
   if (findUserByEmail) {
     return res.status(400).json({
@@ -627,14 +633,12 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
     users.map((user) => user.id)
   );
   postedUser.id = ++maxId;
-  postedUser.rules = ['user']
+  postedUser.rules = ["user"];
   users.push(postedUser);
   res.json(postedUser);
-
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
-
   // if (!checkPermission(req, 'admin')) {
   //   return res.status(403).json({ message: "Access denied" });
   // }
@@ -647,7 +651,7 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
   if (!user) {
     return res.status(400).json({
-      nameInput:'id',
+      nameInput: "id",
       message: "Cannot find user with id:" + id,
     });
   }
@@ -655,7 +659,9 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
   if (putUser.password === user.password) {
     const userFindByEmail = users.find((user) => user.email === putUser.email);
     if (userFindByEmail && userFindByEmail.id !== id) {
-      return res.status(400).json({ nameInput:"email",message: "New Email is already exists!" });
+      return res
+        .status(400)
+        .json({ nameInput: "email", message: "New Email is already exists!" });
     }
     user.email = putUser.email;
     user.password = putUser.password;
@@ -665,19 +671,19 @@ app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
 
     res.json({ ...user });
   }
-  return res.status(400).json({ nameInput:"password", message: "Confirm password is incorrect!" });
-
+  return res
+    .status(400)
+    .json({ nameInput: "password", message: "Confirm password is incorrect!" });
 });
 
 app.delete(
   "/api/users/:id",
   checkToken,
   function (req: Request, res: Response) {
-
-    if (!checkPermission(req, 'admin')) {
+    if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
       return res.status(403).json({ message: "Access denied" });
     }
-    
+
     let userId = parseInt(req.params.id, 10);
     const findIndex = users.findIndex((user) => user.id === userId);
 
@@ -693,6 +699,69 @@ app.delete(
     res.json({ ...user });
   }
 );
+//============================== account settings ======================
+
+app.put(
+  "/api/admin/account-setting/:id",
+  checkToken,
+  (req: Request, res: Response) => {
+    if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let putAccount: AccountSetting = req.body;
+    let id = parseInt(req.params.id, 10);
+
+    const user = users.find((user) => user.id == id);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Cannot find account with id:" + id,
+      });
+    }
+
+    const userFindByEmail = users.find(
+      (user) => user.email === putAccount.newEmail
+    );
+    if (userFindByEmail && userFindByEmail.id !== id) {
+      return res
+        .status(400)
+        .json({ nameInput: "email", message: "New Email is already exists!" });
+    }
+    user.email = putAccount.newEmail;
+    user.password = putAccount.newPassword;
+
+    res.json({ ...user });
+  }
+);
+
+app.put(
+  "/api/admin/user-role/:id",
+  checkToken,
+  (req: Request, res: Response) => {
+    if (!checkPermission(req, "admin") && !checkPermission(req, "user_admin")) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    let putRole: UserRole = req.body;
+    let id = parseInt(req.params.id, 10);
+
+    const user = users.find((user) => user.id == id);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Cannot find account with id:" + id,
+      });
+    }
+    console.log(putRole, user?.rules)
+    if (!user.rules.includes(putRole.role)) {
+      user.rules.push(putRole.role)
+    }
+
+    res.json({ ...user });
+  }
+);
+
 // ============================= RUN ===========================
 
 app.listen(port);
