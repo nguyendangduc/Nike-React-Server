@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
 import { readFileSync, writeFileSync } from "fs";
 import md5 from "md5";
-import { generateId } from "./functions/genId";
+import { generateId, genId } from "./functions/genId";
 import {
   Product,
   User,
@@ -12,6 +12,7 @@ import {
   UserRole,
   UserPutBody,
   AccountSetting,
+  CartItem,
 } from "./models";
 
 const app = express();
@@ -20,6 +21,7 @@ const products: Product[] = JSON.parse(
 );
 const users: User[] = JSON.parse(readFileSync("data/users.json", "utf-8"));
 const orders: Order[] = JSON.parse(readFileSync("data/orders.json", "utf-8"));
+const carts : CartItem[] = JSON.parse(readFileSync("data/carts.json", "utf-8"));
 const port = process.env.PORT || 3005;
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -452,17 +454,92 @@ app.delete(
 
 // ============================= ORDERS ===========================
 
-app.get("/api/orders/:id", function (req: Request, res: Response) {
-  let userId = parseInt(req.params.id, 10);
-  let ords: Order[] = [];
+app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+  let userId = req.params.id;
+  let ords: CartItem[] = [];
   for (let ord of orders) {
     if (ord.idUser === userId) {
       ords.push(ord);
     }
   }
-
   res.json(ords);
 });
+
+// ============================= CARTs ===========================
+
+app.get("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = req.params.id;
+  let c: CartItem[] = [];
+  for (let ca of carts){
+    if(ca.idUser === userId){
+      c.push(ca);
+    }
+  }
+  res.json(c);
+});
+
+app.post("/api/carts/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = req.params.id;
+  let ca = req.body;
+  let c: CartItem[] = [];
+  for (let car of carts){
+    if(car.idUser === userId){
+      c.push(car);
+    }
+  }
+  ca.id = genId();
+  ca.idUser = userId;
+  ca.quantity = 1;
+  carts.push(ca);
+  res.json({...ca});
+})
+
+app.delete("/api/carts/:id/:idOrder", checkToken, (req: Request, res: Response)=>{
+  let userId = req.params.id;
+  let orderId = req.params.idOrder;
+  const findIndex = carts.findIndex((order) => (order.id === orderId && order.idUser === userId));
+
+    if (findIndex === -1) {
+      return res.status(400).json({
+        message: "Cannot find order with id:" + userId,
+      });
+    }
+
+    carts.splice(findIndex, 1);
+    const cart = carts.filter((c)=>c.idUser === userId);
+
+    res.json([...cart ]);
+})
+
+app.post("/api/carts/checkout/:id", checkToken, (req: Request, res: Response)=>{
+  let userId = req.params.id;
+  let info = req.body;
+  let newCarts = carts.filter(cart=>cart.idUser === userId);
+  let length =  carts.length;
+  for(let i = 0; i < length; i++){
+    if(carts[i].idUser === userId){
+      carts.splice(i,1);
+      i--;
+      length--;
+    }
+  }
+  newCarts.map(cart=>{
+    let ord: Order= {} as Order;
+    ord.id = genId();
+    ord.idUser = cart.idUser;
+    ord.productName = cart.productName;
+    ord.price = cart.price;
+    ord.size = cart.size;
+    ord.quantity = cart.quantity;
+    ord.urlImg = cart.urlImg;
+    ord.address = info.address+", "+info.city;
+    ord.name = info.name;
+    ord.phoneNumber = info.phoneNumber;
+    orders.unshift(ord);
+  })
+  res.json(orders);
+})
+
 
 // ============================= AUTH ===========================
 
