@@ -454,15 +454,33 @@ app.delete(
 
 // ============================= ORDERS ===========================
 
-app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+app.get("/api/orders/:id/search/:search",checkToken, function (req: Request, res: Response) {
   let userId = req.params.id;
-  let ords: CartItem[] = [];
+  let searchKey = req.params.search;
+  const ords: CartItem[] = [];
   for (let ord of orders) {
     if (ord.idUser === userId) {
       ords.push(ord);
     }
   }
-  res.json(ords);
+  if(searchKey){
+    const ors = ords.filter(ord=>ord.productName.toLowerCase().includes(searchKey.toLowerCase()))
+    res.json(ors);
+  }
+  else{
+    res.json(ords);
+  }
+});
+
+app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+  let userId = req.params.id;
+  const ords: CartItem[] = [];
+  for (let ord of orders) {
+    if (ord.idUser === userId) {
+      ords.push(ord);
+    }
+  }
+    res.json(ords);
 });
 
 // ============================= CARTs ===========================
