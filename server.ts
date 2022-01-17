@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import bodyParser from "body-parser";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import md5 from "md5";
 import { generateId, genId } from "./functions/genId";
 import {
@@ -316,6 +316,7 @@ app.get(
 app.get(
   "/api/products/type/:type/search/:search/sort/:sortBy/:sortVal/page/:skip/:top",
   (req: Request, res: Response) => {
+    
     const productType = req.params.type;
     const searchW = req.params.search;
     const sortBy = req.params.sortBy;
@@ -447,25 +448,30 @@ app.delete(
 
 // ============================= ORDERS ===========================
 
-app.get("/api/orders/:id/search/:search",checkToken, function (req: Request, res: Response) {
-  let userId = req.params.id;
-  let searchKey = req.params.search;
-  const ords: CartItem[] = [];
-  for (let ord of orders) {
-    if (ord.idUser === userId) {
-      ords.push(ord);
+app.get(
+  "/api/orders/:id/search/:search",
+  checkToken,
+  function (req: Request, res: Response) {
+    let userId = req.params.id;
+    let searchKey = req.params.search;
+    const ords: CartItem[] = [];
+    for (let ord of orders) {
+      if (ord.idUser === userId) {
+        ords.push(ord);
+      }
+    }
+    if (searchKey) {
+      const ors = ords.filter((ord) =>
+        ord.productName.toLowerCase().includes(searchKey.toLowerCase())
+      );
+      res.json(ors);
+    } else {
+      res.json(ords);
     }
   }
-  if(searchKey){
-    const ors = ords.filter(ord=>ord.productName.toLowerCase().includes(searchKey.toLowerCase()))
-    res.json(ors);
-  }
-  else{
-    res.json(ords);
-  }
-});
+);
 
-app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
+app.get("/api/orders/:id", checkToken, function (req: Request, res: Response) {
   let userId = req.params.id;
   const ords: CartItem[] = [];
   for (let ord of orders) {
@@ -473,7 +479,7 @@ app.get("/api/orders/:id",checkToken, function (req: Request, res: Response) {
       ords.push(ord);
     }
   }
-    res.json(ords);
+  res.json(ords);
 });
 
 // ============================= CARTs ===========================
@@ -577,9 +583,9 @@ app.post("/api/auth/login", (req: Request, res: Response) => {
   user.token = md5(new Date().getTime().toString());
   const expirationDate = new Date(new Date().getTime() + expirationTime);
   user.expired = expirationDate;
-  setTimeout(function () {
-    user.token = "";
-  }, expirationTime);
+  // setTimeout(function () {
+  //   user.token = "";
+  // }, expirationTime);
   return res.json({ ...user });
 });
 
@@ -640,7 +646,18 @@ app.post("/api/auth/register", (req: Request, res: Response) => {
 });
 
 app.post("/api/auth/logout", checkToken, (req: Request, res: Response) => {
-  res.json(true);
+  const authorization = req.headers.authorization;
+  const token = authorization?.split("Bearer ")[1];
+  const user = users.find((user) => {
+    return user.token == token?.trim();
+  });
+  if (!user) {
+    return res
+      .status(401)
+      .json({ message: "Login session expired, please login again!" });
+  }
+  user.token = ''
+  res.json(user);
 });
 
 // ============================= USERS ===========================
@@ -755,7 +772,6 @@ app.post("/api/users", checkToken, (req: Request, res: Response) => {
 });
 
 app.put("/api/users/:id", checkToken, (req: Request, res: Response) => {
-
   let putUser: User = req.body;
   let id = parseInt(req.params.id, 10);
   let status = false;
